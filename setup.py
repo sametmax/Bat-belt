@@ -1,7 +1,7 @@
 
 from setuptools import setup, find_packages
 
-src_directory = 'django-quiky'
+src_directory = 'batbelt'
 
 open('MANIFEST.in', 'w').write('\n'.join((
     "include *.md",
