@@ -1,8 +1,6 @@
 
 from setuptools import setup, find_packages
 
-src_directory = 'batbelt'
-
 open('MANIFEST.in', 'w').write('\n'.join((
     "include *.md",
 )))
@@ -24,6 +22,6 @@ setup(
         "Natural Language :: English",
         "Programming Language :: Python :: 2.7"
     ],
-    url="https://github.com/sametmax/batbelt"
+    url="https://github.com/sametmax/Bat-belt"
 )
 
