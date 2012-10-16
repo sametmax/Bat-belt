@@ -5,10 +5,12 @@ open('MANIFEST.in', 'w').write('\n'.join((
     "include *.md",
 )))
 
+from batbelt import __version__
+
 setup(
 
     name="batbelt",
-    version="0.1",
+    version=__version__,
     packages=find_packages('.'),
     author="Sam et Max",
     author_email="lesametlemax@gmail.com",
