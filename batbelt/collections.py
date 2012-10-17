@@ -60,9 +60,9 @@ def get(data, *keys, **kwargs):
 KEY, PREV, NEXT = range(3)
 
 
-class OrderedSet(collections.MutableSet):
+class sset(collections.MutableSet):
     """
-        Set that preservers ordering.
+        Set that preserves ordering.
 
         From http://code.activestate.com/recipes/576694/
     """

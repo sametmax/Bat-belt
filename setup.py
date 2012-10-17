@@ -14,7 +14,7 @@ setup(
     packages=find_packages('.'),
     author="Sam et Max",
     author_email="lesametlemax@gmail.com",
-    description="A collection of gagdets make Python even more powerful.",
+    description="A collection of gagdets that makes Python even more powerful.",
     long_description=open('README.md').read(),
     include_package_data=True,
     classifiers=[
