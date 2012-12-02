@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 
 open('MANIFEST.in', 'w').write('\n'.join((
-    "include *.md",
+    "include *.rst",
 )))
 
 from batbelt import __version__

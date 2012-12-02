@@ -3,6 +3,9 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 
+
+
+
 import threading
 import multiprocessing
 from functools import wraps
@@ -122,6 +125,10 @@ def worker(block=True, timeout=0.1, method='process'):
             out 8
             in 9
             out 9
+
+        If an exception occures, it will be send back in the message queue.
+
+        So you may want to check the result with isintance().
     """
 
     def decorator(func):
@@ -152,17 +159,25 @@ def worker(block=True, timeout=0.1, method='process'):
 
                     except (Error, Empty):
                         pass
-                    except StopWorker:
+                    except (StopWorker, KeyboardInterrupt):
                         break
+                    except Exception as e:
+                        out_queue.put(e)
 
             @wraps(func)
             def wrapper(*args, **kwargs):
                 return func(*args, **kwargs)
 
+            def get(block=block, timeout=timeout):
+                res = out_queue.get(block, timeout)
+                if isinstance(res, Exception):
+                    raise res
+                return res
+
             wrapper.manager = Manager(target=main_loop)
+            wrapper.manager.get = get
             wrapper.manager.stop = lambda: in_queue.put(StopWorker(), block, timeout)
             wrapper.manager.put = lambda x: in_queue.put(x, block, timeout)
-            wrapper.manager.get = lambda b=block, t=timeout: out_queue.get(b, t)
             wrapper.TimeoutError = Error
             wrapper.start = lambda: wrapper.manager.start() or wrapper.manager
 

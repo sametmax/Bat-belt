@@ -3,13 +3,19 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 u"""
-    A generic slugifier utility.
+
+    Various tools to manipulate strints. Features tools to normalize and
+    slugify strings. Also some ways to escape HTML.
+
+    Here is an example of the generic slugifier utility (as for 'normalize',
+    'escape_html', 'unescape_html' as pretty straightforward and don't need
+    that much of an explanation).
 
     Works out of the box for Latin-based scripts.
 
     Example:
 
-        >>> from slugify import slugify
+        >>> from strings import slugify
         >>> slugify(u"C'est Noël !")
         u'cest-noel'
         >>> slugify(u"C'est Noël !", separator="_")
@@ -46,8 +52,11 @@ u"""
 import re
 import unicodedata
 
+from xml.sax.saxutils import escape, unescape
+
 __all__ = ['unicode_slugify', 'unicodedata_slugify', 'unidecode_slugify',
-           'unicodedata_normalize', 'unidecode_normalize', 'slugify', 'normalize']
+           'unicodedata_normalize', 'unidecode_normalize', 'slugify',
+           'normalize', 'escape_html', 'unescape_html']
 
 
 def unicode_slugify(string, separator=r'-'):
@@ -124,6 +133,32 @@ try:
 except ImportError:
     slugify = unicodedata_slugify
     normalize = unicodedata_normalize
+
+
+def escape_html(text, additional_escape={'"': "&quot;", "'": "&apos;"}):
+    """
+        Turn HTML tag caracters into HTML entities.
+
+
+        Example:
+
+            >>> escape_html("<strong>Ben & Jelly's !</strong>")
+            '&lt;strong&gt;Ben &amp; Jelly&apos;s !&lt;/strong&gt;'
+
+    """
+    return escape(text, additional_escape)
+
+
+def unescape_html(text, additional_escape={"&quot;": '"', "&apos;": "'"}):
+    """
+        Turn HTML tag entities into ASCII caracters.
+
+        Example:
+
+            >>> unescape_html('&lt;strong&gt;Ben &amp; Jelly&apos;s !&lt;/strong&gt;')
+            "<strong>Ben & Jelly's !</strong>"
+    """
+    return unescape(text, additional_escape)
 
 
 if __name__ == "__main__":

@@ -1,1 +1,0 @@
-A collection of gagdets make Python even more powerful.

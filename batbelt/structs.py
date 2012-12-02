@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import collections
+
+from collections import MutableSet
 
 from itertools import islice, chain
 
@@ -28,6 +29,24 @@ def dmerge(d1, d2):
     d.update(d1)
     d.update(d2)
     return d
+
+
+def dswap(dct):
+    """
+        Swap key and values of a given dictionary. Return a new dictionary.
+
+        If you have duplicate values, the last one in the dictionary order
+        will be used. Since dictionary order is not predictable, you should
+        make sure to either remove duplicates values before processing, or
+        just make sure loosing some keys is not a problem for you.
+
+
+        example:
+
+            >>> sorted(dswap({'a': 1, 'b': 2}).items())
+            [(1, 'a'), (2, 'b')]
+    """
+    return dict((value, key) for key, value in dct.iteritems())
 
 
 def get(data, *keys, **kwargs):
@@ -57,10 +76,39 @@ def get(data, *keys, **kwargs):
     return value
 
 
+def subdict(dct, include=(), exclude=()):
+    """
+        Return a dictionary that is a copy of the given one.
+
+        All tvalues in `include` are used as key to be copied to
+         the resulting dictionary.
+
+        You can also pass a list of key to exclude instead by setting
+        `exclude`. But you can't use both `include` and `exclude`: if you do,
+        `exclude will be ignored`
+
+        Example:
+
+        >>> subdict({1:None, 2: False, 3: True}, [1, 2])
+        {1: None, 2: False}
+        >>> subdict({1:None, 2: False, 3: True}, exclude=[1, 2])
+        {3: True}
+
+    """
+
+    if include:
+        return dict((k, v) for k, v in dct.iteritems() if k in include)
+
+    return dict((k, v) for k, v in dct.iteritems() if k not in exclude)
+
+
+
+
+
 KEY, PREV, NEXT = range(3)
 
 
-class sset(collections.MutableSet):
+class sset(MutableSet):
     """
         Set that preserves ordering.
 
@@ -119,7 +167,7 @@ class sset(collections.MutableSet):
         return '%s(%r)' % (self.__class__.__name__, list(self))
 
     def __eq__(self, other):
-        if isinstance(other, OrderedSet):
+        if isinstance(other, sset):
             return len(self) == len(other) and list(self) == list(other)
         return set(self) == set(other)
 
