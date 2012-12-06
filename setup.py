@@ -15,7 +15,7 @@ setup(
     author="Sam et Max",
     author_email="lesametlemax@gmail.com",
     description="A collection of gagdets that makes Python even more powerful.",
-    long_description=open('README.md').read(),
+    long_description=open('README.rst').read(),
     include_package_data=True,
     classifiers=[
         'Programming Language :: Python',

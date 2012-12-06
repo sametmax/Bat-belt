@@ -5,6 +5,8 @@
 
 import sys
 
+from functools import wraps
+
 from io import BytesIO
 from contextlib import contextmanager
 
@@ -68,3 +70,117 @@ def capture_ouput(stdout_to=None, stderr_to=None):
             c2.seek(0)
         except (ValueError, TypeError):
             pass
+
+
+def decorator_with_args(wrap=True,
+                        function_assigned=('__module__', '__name__', '__doc__'),
+                        function_updated=('__dict__',),
+                        decorator_assigned=('__module__', '__name__', '__doc__'),
+                        decorator_updated=('__dict__',),
+                        ):
+    """
+        Use this decorator on a wannabe decorator.
+
+        It will turn it into a decorator that accept any arguments and
+        wraps the resulting decorated function unless you set wrap=False.
+
+        Usage:
+
+            # You use @decorator_with_args on a function you wish to
+            # be a decorator accepting arguments
+            @decorator_with_args()
+            def your_decorator(func, *args, **kwargs):
+                def wrapper():
+                    # do stuff
+                    return func()
+                return wrapper
+
+        Your decorator must accept the function as the first argument, and
+        expact the other arguments after that. It doesn't have to be *args,
+        **kwargs, it can be any signature, as long as the first argument,
+        is the function to decorate.
+
+        One your wannabe decorator decorated, you can use it this way:
+
+            # When you use YOUR decorator, you will be able to pass arguments
+            @your_decorator(arg1, arg2, arg3='foo')
+            def a_function():
+                # do stuff
+
+            # If you don't use arguments, you still need the parenthesis
+            @your_decorator()
+            def another_function():
+                # do stuff
+
+        By default, @decorator_with_args will attempt to apply functools.wraps on
+        the wrapper your wannabe decorator returns. If you don't wish that,
+        pass wrap=False:
+
+            @decorator_with_args(wrap=False)
+            def your_decorator(func, *args, **kwargs):
+                def wrapper():
+                    # do stuff
+                    return func()
+                # This will be passed to functools.wraps() if you don't
+                # set wrap=False
+                return wrapper
+
+        You can also pass the same arguments you would pass to functools.wraps
+        directly to @decorator_with_args. They will be passed to along:
+
+            @decorator_with_args(function_assigned=('__module__', '__name__', '__doc__'))
+            def your_decorator(func, *args, **kwargs):
+                def wrapper():
+                    # do stuff
+                    return func()
+                # this will apply functools.wrap() with assigned being set to
+                # ('__module__', '__name__')
+                return wrapper
+
+        The params are named function_assigned and function_updated instead of
+        just assigned and updated like in functools.wraps.
+
+        Also, @decorator_with_args will ALWAYS apply functools.wraps to the
+        wrapper around your wannabe decorator. You can also control what's
+        copied by passing decorator_assigned and decorator_updated the same way:
+
+            # functools.wrap will always be applied to your_decorator()
+            # but you can choose with which arguments
+            @decorator_with_args(decorator_updated=('__dict__',))
+            def your_decorator(func, *args, **kwargs):
+                def wrapper():
+                    # do stuff
+                    return func()
+                return wrapper
+
+    """
+    # decorator() will return this function, wich will be the real decorator
+    # called on the wannabe decorator.
+    def _decorator(wannabe_decorator):
+
+        # This is the function that will return your wrapped wannabe decorator.
+        # Il will add a wrapper that will call your wannabe decorator with
+        # the arguments stored in a closure under the hood.
+        def decorator_maker(*args, **kwargs):
+
+            # This is the the wrapper around your wannabe decorator. It
+            # replaces your function so it can pass arguments to it.
+            # We apply @wraps on it so it takes all metadata from
+            # the wannabe decorator and attach them to itself.
+            @wraps(wannabe_decorator, decorator_assigned, decorator_updated)
+            def decorator_wrapper(func):
+
+                # The wrapper calls your wannabe decorator, passing the
+                # function to decorate and arguments to it.
+                # It will get the wrapper your wannabe decorator returns,
+                # and if, wrap=True (default), will apply @wraps on it too.
+                d = wannabe_decorator(func, *args, **kwargs)
+                if wraps:
+                    d = wraps(func, function_assigned, function_updated)(d)
+                return d
+
+            return decorator_wrapper
+
+        return decorator_maker
+
+    return _decorator
