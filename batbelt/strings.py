@@ -5,11 +5,13 @@
 u"""
 
     Various tools to manipulate strints. Features tools to normalize and
-    slugify strings. Also some ways to escape HTML.
+    slugify strings. Also some ways to escape HTML and a JSON serializer
+    that deals with datetime objects.
 
     Here is an example of the generic slugifier utility (as for 'normalize',
-    'escape_html', 'unescape_html' as pretty straightforward and don't need
-    that much of an explanation).
+    'escape_html', 'unescape_html' and "json_dumps" are pretty straightforward
+    and don't need that much of an explanation. Ok, it's just because I'm
+    too lazy to write it down really).
 
     Works out of the box for Latin-based scripts.
 
@@ -50,13 +52,14 @@ u"""
 """
 
 import re
+import json
 import unicodedata
 
+from datetime import datetime, timedelta, date, time
 from xml.sax.saxutils import escape, unescape
 
-__all__ = ['unicode_slugify', 'unicodedata_slugify', 'unidecode_slugify',
-           'unicodedata_normalize', 'unidecode_normalize', 'slugify',
-           'normalize', 'escape_html', 'unescape_html']
+from utils import CLASSIC_DATETIME_FORMAT, CLASSIC_DATETIME_PATTERN
+
 
 
 def unicode_slugify(string, separator=r'-'):
@@ -161,6 +164,159 @@ def unescape_html(text, additional_escape={"&quot;": '"', "&apos;": "'"}):
     return unescape(text, additional_escape)
 
 
+
+class JSONEncoder(json.JSONEncoder):
+    """
+        Json encoder with date and time handling.
+
+        You should use naive datetime only. If you have timezone information,
+        store them in a separate field.
+    """
+
+
+    DATETIME_FORMAT = CLASSIC_DATETIME_FORMAT
+    DATE_FORMAT, TIME_FORMAT = DATETIME_FORMAT.split()
+    TIMEDELTA_FORMAT = "timedelta(seconds='%s')"
+
+
+    def __init__(self, datetime_format=None, date_format=None, time_format=None,
+                timedelta_format=None, *args, **kwargs):
+
+        self.datetime_format = datetime_format or self.DATETIME_FORMAT
+        self.date_format = date_format or self.DATE_FORMAT
+        self.time_format = time_format or self.TIME_FORMAT
+        self.timedelta_format = timedelta_format or self.TIMEDELTA_FORMAT
+
+        super(JSONEncoder, self).__init__(self, *args, **kwargs)
+
+
+    def default(self, obj):
+
+        if isinstance(obj, datetime):
+            return obj.strftime(self.datetime_format)
+
+        if isinstance(obj, date):
+            return obj.strftime(self.date_format)
+
+        if isinstance(obj, time):
+            return obj.strftime(self.time_format)
+
+        if isinstance(obj, timedelta):
+            return self.timedelta_format % obj.total_seconds()
+
+        return json.JSONEncoder.default(self, obj)
+
+
+
+class JSONDecoder(json.JSONDecoder):
+    """
+        Json decoder that decode JSON encoded with JSONEncoder
+    """
+
+    DATETIME_PATTERN = CLASSIC_DATETIME_PATTERN
+    DATE_PATTERN, TIME_PATTERN = DATETIME_PATTERN.split()
+    TIMEDELTA_PATTERN = r"timedelta\(seconds='(?P<seconds>\d+(?:\.\d+)*)'\)"
+
+
+    def __init__(self, datetime_pattern=None, date_pattern=None,
+                time_pattern=None, timedelta_pattern=None, datetime_format=None,
+                date_format=None, time_format=None, *args, **kwargs):
+
+        self.datetime_format = datetime_format or JSONEncoder.DATETIME_FORMAT
+        self.date_format = date_format or JSONEncoder.DATE_FORMAT
+        self.time_format = time_format or JSONEncoder.TIME_FORMAT
+
+        self.datetime_pattern = re.compile(datetime_pattern or self.DATETIME_PATTERN)
+        self.date_pattern = re.compile(date_pattern or self.DATE_PATTERN)
+        self.time_pattern = re.compile(time_pattern or self.TIME_PATTERN)
+        self.timedelta_pattern = re.compile(timedelta_pattern or self.TIMEDELTA_PATTERN)
+
+        super(JSONDecoder, self).__init__(object_pairs_hook=self.object_pairs_hook,
+                                          *args, **kwargs)
+
+    def object_pairs_hook(self, obj):
+        return dict((k, self.decode_on_match(v)) for k, v in obj)
+
+
+    def decode_on_match(self, obj):
+        """
+            Try to match the string, and if it fits any date format,
+            parse it and returns a Python object.
+        """
+
+        string = unicode(obj)
+
+        match = re.search(self.datetime_pattern, string)
+        if match:
+            return datetime.strptime(match.string, self.datetime_format)
+
+        match = re.search(self.date_pattern, string)
+        if match:
+            return datetime.strptime(match.string, self.date_format).date()
+
+        match = re.search(self.time_pattern, string)
+        if match:
+            return datetime.strptime(match.string, self.time_format).time()
+
+        match = re.search(self.timedelta_pattern, string)
+        if match:
+            return timedelta(seconds=float(match.groupdict()['seconds']))
+
+        return obj
+
+
+def json_dumps(data, datetime_format=None, date_format=None, time_format=None,
+                timedelta_format=None, *args, **kwargs):
+    r"""
+        Same as Python's json.dumps but also serialize datetime, date, time
+        and timedelta.
+
+        Example:
+            >>> import datetime
+            >>> json_dumps({'test': datetime.datetime(2000, 1, 1, 1, 1, 1)})
+            '{"test": "2000-01-01 01:01:01.000000"}'
+            >>> json_dumps({'test': datetime.date(2000, 1, 1)})
+            '{"test": "2000-01-01"}'
+            >>> json_dumps({'test': datetime.time(1, 1, 1)})
+            '{"test": "01:01:01.000000"}'
+            >>> json_dumps({'test': datetime.timedelta(1, 1)})
+            '{"test": "timedelta(seconds=\'86401.0\')"}'
+            >>> json_dumps({u'test': datetime.timedelta(1, 1), u'a': [1, 2]})
+            '{"test": "timedelta(seconds=\'86401.0\')", "a": [1, 2]}'
+
+    """
+    return JSONEncoder(datetime_format, date_format, time_format,
+                       timedelta_format, *args, **kwargs).encode(data)
+
+
+def json_loads(string, datetime_pattern=None, date_pattern=None,
+                time_pattern=None, timedelta_pattern=None, datetime_format=None,
+                date_format=None, time_format=None, *args, **kwargs):
+    r"""
+        Same as Python's json.loads, but handles formats from batbelt.json_dumps
+        which are currently mainly date formats.
+
+        Example:
+
+            >>> json_loads('{"test": "2000-01-01 01:01:01.000000"}')
+            {u'test': datetime.datetime(2000, 1, 1, 1, 1, 1)}
+            >>> json_loads('{"test": "2000-01-01"}')
+            {u'test': datetime.date(2000, 1, 1)}
+            >>> json_loads('{"test": "01:01:01.000000"}')
+            {u'test': datetime.time(1, 1, 1)}
+            >>> json_loads('{"test": "timedelta(seconds=\'86401.0\')"}')
+            {u'test': datetime.timedelta(1, 1)}
+            >>> json_loads('{"test": "timedelta(seconds=\'86401.0\')", "a": [1, 2]}')
+            {u'test': datetime.timedelta(1, 1), u'a': [1, 2]}
+
+    """
+    return JSONDecoder(datetime_pattern, date_pattern, time_pattern,
+                       timedelta_pattern, datetime_format, date_format,
+                       time_format, *args, **kwargs).decode(string)
+
+
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+

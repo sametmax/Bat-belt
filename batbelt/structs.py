@@ -3,19 +3,36 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 
-from collections import MutableSet
+from collections import MutableSet, deque
 
 from itertools import islice, chain
 
 
-all = ['chunks', 'dmerge', 'get']
+__all__ = ['chunks', 'dmerge', 'get', 'window', 'dswap', 'subdict', 'first',
+           'first_true', 'sset']
 
 
 def chunks(seq, chunksize, process=iter):
-    """ Yields items from an iterator in iterable chunks."""
+    """
+        Yields items from an iterator in iterable chunks.
+    """
     it = iter(seq)
     while True:
         yield process(chain([it.next()], islice(it, chunksize - 1)))
+
+
+
+def window(iterable, size=2):
+    """
+        Yields iterms by bunch of a given size, but rolling only one item
+        in and out at a time when iterating.
+    """
+    iterable = iter(iterable)
+    d = deque(islice(iterable, size), size)
+    yield d
+    for x in iterable:
+        d.append(x)
+        yield d
 
 
 def dmerge(d1, d2):
@@ -102,7 +119,28 @@ def subdict(dct, include=(), exclude=()):
     return dict((k, v) for k, v in dct.iteritems() if k not in exclude)
 
 
+def first(iterable, default=None):
+    """
+        Return the first item of any iterable. If the iterable is empty,
+        return the default value.
+    """
+    for x in iterable:
+        return x
+    return default
 
+
+def first_true(iterable, key=lambda x: x, default=None):
+    """
+        Return the first item of any iterable for which the key is True.
+
+        By default the key is the entire element.
+
+        If the iterable is empty, return the default value.
+    """
+    for x in iterable:
+        if key(x):
+            return x
+    return default
 
 
 KEY, PREV, NEXT = range(3)

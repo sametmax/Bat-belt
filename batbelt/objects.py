@@ -7,7 +7,7 @@
 from functools import wraps
 
 
-__all__ = ['import_from_path', 'attr', 'dynamicmethod']
+__all__ = ['import_from_path', 'attr', 'dynamicmethod', 'NullObject', 'Null']
 
 
 def import_from_path(path):
@@ -99,7 +99,7 @@ class Singleton(type):
 
 
 
-class Null(object):
+class NullObject(object):
     """
 
         Null object pattern implementation. This object is a singleton. It
@@ -108,31 +108,31 @@ class Null(object):
 
         Example:
 
-            >>> n = Null()
+            >>> n = NullObject()
             >>> n
-            <Null>
-            >>> id(n) == id(Null('value')) == id(Null('value', param='value'))
+            NullObject()
+            >>> n == NullObject('value') == NullObject('value', param='value')
             True
             >>> n() == n('value') == n('value', param='value') == n
             True
             >>> n.attr1
-            <Null>
+            NullObject()
             >>> n.attr1.attr2
-            <Null>
+            NullObject()
             >>> n.method1()
-            <Null>
+            NullObject()
             >>> n.method1().method2()
-            <Null>
+            NullObject()
             >>> n.method('value')
-            <Null>
+            NullObject()
             >>> n.method(param='value')
-            <Null>
+            NullObject()
             >>> n.method('value', param='value')
-            <Null>
+            NullObject()
             >>> n.attr1.method1()
-            <Null>
+            NullObject()
             >>> n.method1().attr1
-            <Null>
+            NullObject()
             >>> n.attr1 = 'value'
             >>> n.attr1.attr2 = 'value'
             >>> del n.attr1
@@ -140,47 +140,45 @@ class Null(object):
             >>> str(n) == ''
             True
             >>> n + 1 / 7 % 3
-            <Null>
+            NullObject()
             >>> n[1] == n[:4] == n
             True
             >>> 'test' in n
             False
             >>> n['test']
-            <Null>
-            >>> Null() >> 1
-            <Null>
-            >>> Null() == None
+            NullObject()
+            >>> NullObject() >> 1
+            NullObject()
+            >>> NullObject() == None
             True
 
 
-        Iterating on Null() will end up in a infinite loop with the next item
-        always beeing Null(). Stuff like sorted() will hang.
+        Iterating on NullObject() will end up in a infinite loop with the next item
+        always beeing NullObject(). Stuff like sorted() will hang.
     """
-
-    __metaclass__ = Singleton
 
     def __init__(self, *args, **kwargs):
         """
-            Null accept any arguments
+            NullObject accept any arguments
         """
         pass
 
     def __repr__(self):
-        return "<Null>"
+        return "NullObject()"
 
     def __str__(self):
         return ""
 
     def __eq__(self, other):
         """
-            Null is only equal to itself or None
+            NullObject is only equal to itself or None
         """
-        return id(self) == id(other) or other is None
+        return isinstance(other, NullObject) or other is None
 
-    # Like None, Null is False is a boolean context
+    # Like None, NullObject is False is a boolean context
     __nonzero__ = __bool__ = lambda self: False
 
-    # Any attribute lookup, method call or operation on Null returns Null
+    # Any attribute lookup, method call or operation on NullObject returns NullObject
     nullify = lambda self, *x, **kwargs: self
 
     __call__ = nullify
@@ -209,3 +207,7 @@ class Null(object):
     # __len__ = ...
     # __iter__ = ...
     #  __round__ = __floor__ = __ceil__ = __trunc__ = ...
+
+
+# One official instance off NullObject, that can be used like None
+Null = type('Null', (NullObject,), {"__repr__": lambda s: "Null"})()
