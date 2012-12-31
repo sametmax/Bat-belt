@@ -187,9 +187,8 @@ def decorator_with_args(wrap=True,
 
 
 class MultiStopIteration(StopIteration):
-    @classmethod
-    def throw(cls):
-        raise cls
+    def throw(self):
+        raise self
 
 
 
@@ -205,6 +204,7 @@ def multibreak():
             ...     for x in range(1, 3):
             ...         for z in range(1, 3):
             ...             for w in range(1, 3):
+            ...                 print w
             ...                 if x * z * w == 2 * 2 * 2:
             ...                     print 'stop'
             ...                     stop()
@@ -216,9 +216,11 @@ def multibreak():
             1
             2
             1
+            2
+            stop
     '''
 
     try:
-        yield MultiStopIteration.throw
+        yield MultiStopIteration().throw
     except MultiStopIteration:
         pass
