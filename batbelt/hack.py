@@ -201,9 +201,9 @@ def multibreak():
         Example:
 
             >>> with multibreak() as stop:
-            ...     for x in range(1, 3):
-            ...         for z in range(1, 3):
-            ...             for w in range(1, 3):
+            ...     for x in range(1, 4):
+            ...         for z in range(1, 4):
+            ...             for w in range(1, 4):
             ...                 print w
             ...                 if x * z * w == 2 * 2 * 2:
             ...                     print 'stop'
@@ -211,10 +211,16 @@ def multibreak():
             ...
             1
             2
+            3
             1
             2
+            3
             1
             2
+            3
+            1
+            2
+            3
             1
             2
             stop
