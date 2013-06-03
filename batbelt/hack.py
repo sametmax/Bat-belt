@@ -184,3 +184,49 @@ def decorator_with_args(wrap=True,
         return decorator_maker
 
     return _decorator
+
+
+class MultiStopIteration(StopIteration):
+    def throw(self):
+        raise self
+
+
+
+@contextmanager
+def multibreak():
+    '''
+
+        Context manager which allow to break multiple nested for loops at once.
+
+        Example:
+
+            >>> with multibreak() as stop:
+            ...     for x in range(1, 4):
+            ...         for z in range(1, 4):
+            ...             for w in range(1, 4):
+            ...                 print w
+            ...                 if x * z * w == 2 * 2 * 2:
+            ...                     print 'stop'
+            ...                     stop()
+            ...
+            1
+            2
+            3
+            1
+            2
+            3
+            1
+            2
+            3
+            1
+            2
+            3
+            1
+            2
+            stop
+    '''
+
+    try:
+        yield MultiStopIteration().throw
+    except MultiStopIteration:
+        pass
