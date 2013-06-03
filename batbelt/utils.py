@@ -9,7 +9,8 @@
 
 
 import sys
-import calendar
+
+from datetime import datetime
 
 
 CLASSIC_DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S.%f'
@@ -18,7 +19,7 @@ CLASSIC_DATETIME_PATTERN = r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}'
 
 
 
-def to_timestamp(datetime):
+def to_timestamp(dt):
     """
         Return a timestamp for the given datetime object.
 
@@ -28,7 +29,7 @@ def to_timestamp(datetime):
             >>> to_timestamp(datetime.datetime(2000, 1, 1, 1, 1, 1, 1))
             946688461
     """
-    return calendar.timegm(datetime.timetuple())
+    return (dt - datetime(1970, 1, 1)).total_seconds()
 
 
 class ImportableItems(list):

@@ -315,6 +315,39 @@ def json_loads(string, datetime_pattern=None, date_pattern=None,
                        time_format, *args, **kwargs).decode(string)
 
 
+def template(tpl, context):
+    """
+      Use the given a template file, call .format() on it's content,
+      and returns it as a string.
+
+      Template file can be a path or a file like object.
+    """
+
+    try:
+        tpl = open(tpl)
+    except TypeError:
+        pass
+
+    return tpl.read().format(**context)
+
+
+def render(tpl, context, target):
+    """
+      Render the template and write the result in a file.
+
+      Template and target files can be a path or a file like objects.
+    """
+
+    try:
+        target = open(target, 'w')
+    except TypeError:
+        pass
+
+    res = template(tpl, context)
+    target.write(res)
+
+    target.close()
+
 
 if __name__ == "__main__":
     import doctest

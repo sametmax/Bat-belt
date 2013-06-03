@@ -16,7 +16,7 @@ def capture_ouput(stdout_to=None, stderr_to=None):
     """
         Context manager that captures any printed ouput in the 'with' block.
 
-        :Exemple:
+        :Example:
 
         >>> with capture_ouput() as (stdout, stderr):
         ...    print "hello",

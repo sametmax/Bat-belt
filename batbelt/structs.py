@@ -93,6 +93,46 @@ def get(data, *keys, **kwargs):
     return value
 
 
+def rename(dct, old_name, new_name):
+    """
+        Rename a key in a dictionary. No effect if the key does not exists.
+
+        Return the dictiony passed as parameter.
+    """
+
+    try:
+        dct[new_name] = dct[old_name]
+        del dct[old_name]
+    except KeyError:
+        pass
+
+    return dct
+
+
+def unpack(dct, *args, **kwargs):
+    """
+        Return an generator with the values for the given keys or
+        a default value.
+
+        :Example:
+
+        >>> a, b, c = unpack(dct, 'a', 'b', 'c', default=1)
+        >>> a
+        2
+        >>> b
+        4
+        >>> c
+        1
+
+    """
+
+    default = kwargs.get('default', None)
+
+    for key in args:
+        yield dct.get(key, default)
+
+
+
 def subdict(dct, include=(), exclude=()):
     """
         Return a dictionary that is a copy of the given one.
