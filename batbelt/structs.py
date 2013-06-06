@@ -35,16 +35,19 @@ def window(iterable, size=2):
         yield d
 
 
-def dmerge(d1, d2):
+def dmerge(d1, d2, merge_func=lambda v1, v2: v2):
     """
         Create a new dictionary being the merge of the two passed as a
-        parameter.
+        parameter. If a key is in both dictionaries, the values are processed
+        with the merge_func.
 
-        The keys in the second one erases the keys in the first one.
+        By default the value in the second dictionary erases the value in the
+        first one.
     """
     d = {}
-    d.update(d1)
-    d.update(d2)
+    d.update([(k, v) for k, v in d1.iteritems() if k not in d2])
+    d.update([(k, v) for k, v in d2.iteritems() if k not in d1])
+    d.update([(k, merge_func(v, d2[k])) for k, v in d1.iteritems() if k in d2])
     return d
 
 
