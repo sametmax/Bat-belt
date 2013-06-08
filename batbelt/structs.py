@@ -35,7 +35,7 @@ def window(iterable, size=2):
         yield d
 
 
-def dmerge(d1, d2, merge_func=lambda v1, v2: v2):
+def dmerge(d1, d2, merge_func=None):
     """
         Create a new dictionary being the merge of the two passed as a
         parameter. If a key is in both dictionaries, the values are processed
@@ -45,9 +45,18 @@ def dmerge(d1, d2, merge_func=lambda v1, v2: v2):
         first one.
     """
     d = {}
-    d.update([(k, v) for k, v in d1.iteritems() if k not in d2])
-    d.update([(k, v) for k, v in d2.iteritems() if k not in d1])
-    d.update([(k, merge_func(v, d2[k])) for k, v in d1.iteritems() if k in d2])
+
+    d.update(d1)
+
+    if merge_func is None:
+        d.update(d2)
+        return d
+
+    for k, v in d2.iteritems():
+        if k in d:
+            d[k] = merge_func(d[k], v)
+        else:
+            d[k] = v
     return d
 
 
