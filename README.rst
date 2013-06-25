@@ -194,6 +194,24 @@ Enjoy :
         # do stuff in the decorated function
 
 
+
+Add a any directory to the PYTHON PATH
+===========================================
+
+Accepts shell variables and relative paths :
+
+    from batbelt.utils import add_to_pythonpath
+    add_to_pythonpath("~/..")
+
+You can (and probably wants) specify a starting point if you pass a relative path. The default starting point is the result is `os.getcwd()` while you probably wants the directory containing you script. To to so, pass `__file__`:
+
+    add_to_pythonpath("../..", starting_point=__file__)
+
+`starting_point` can be a file path (basename will be stripped) or a directory name. If will be from there that the reltive path will be calculated.
+
+You can also choose where in the `sys.path` list the your path will be added by passing `insertion_index`, which default to the after the last existing item.
+
+
 Poor man task queue
 ===================================================================================================
 

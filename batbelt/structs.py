@@ -116,6 +116,7 @@ def unpack(dct, *args, **kwargs):
 
         :Example:
 
+        >>> dct = {'a': 2, 'b': 4, 'z': 42}
         >>> a, b, c = unpack(dct, 'a', 'b', 'c', default=1)
         >>> a
         2

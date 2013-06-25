@@ -9,6 +9,7 @@
 
 
 import sys
+import os
 
 from datetime import datetime
 
@@ -70,4 +71,40 @@ def import_list(*args):
         return func
 
     return importable_items, importable
+
+
+
+def add_to_pythonpath(path, starting_point='.', insertion_index=None):
+    """
+        Add the directory to the sys.path.
+
+        You can path an absolute or a relative path to it.
+
+        If you choose to use a relative path, it will be relative to
+        `starting_point` by default, which is set to '.'.
+
+        You may want to set it to something like __file__ (the basename will
+        be stripped, and the current file's parent directory will be used
+        as a starting point, which is probably what you expect in the
+        first place).
+
+        :example:
+
+        >>> add_to_pythonpath('../..', __file__)
+    """
+
+    if not os.path.isabs(path):
+
+        if os.path.isfile(starting_point):
+            starting_point = os.path.dirname(starting_point)
+
+        path = os.path.join(starting_point, path)
+
+    path = os.path.realpath(os.path.expandvars(os.path.expanduser(path)))
+
+    if path not in sys.path:
+        if insertion_index is None:
+            sys.path.append(path)
+        else:
+            sys.path.insert(insertion_index, path)
 
