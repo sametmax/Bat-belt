@@ -92,10 +92,20 @@ Dictionaries one liners
 ===================================================================================
 
 
- I wish <code>+</code> was overloaded for dicts::
+I wish <code>+</code> was overloaded for dicts::
 
     >>> dmerge({"a": 1, "b": 2}, {"b": 2, "c": 3})
     {'a': 1, 'c': 3, 'b': 2}
+
+
+Sometimes you do not want to simply overwrite the values inside the original dict, but merge them in custom fashion::
+
+    >>> def my_merge(v1, v2):
+    ...     if isinstance(v1, dict) and isinstance(v2, dict):
+    ...         return dmerge(v1, v2)
+    ...     return v2
+    >>> dmerge({"a": 1, "b": {'ok': 5}}, {"b": {'ko': 5 }, "c": 3}, my_merge)
+    {'a': 1, 'c': 3, 'b': {'ko': 5, 'ok': 5}}
 
 Original dicts are not modified, but this will modify them::
 
