@@ -150,7 +150,7 @@ def subdict(dct, include=(), exclude=()):
     """
         Return a dictionary that is a copy of the given one.
 
-        All tvalues in `include` are used as key to be copied to
+        All values in `include` are used as key to be copied to
          the resulting dictionary.
 
         You can also pass a list of key to exclude instead by setting
@@ -194,6 +194,174 @@ def first_true(iterable, key=lambda x: x, default=None):
         if key(x):
             return x
     return default
+
+
+def skip_duplicates(iterable, key=lambda x: x):
+    """
+        Returns a generator that will yield all objects from iterable, skipping
+        duplicates.
+
+        Duplicates are identified using the `key` function to calculate a
+        unique fingerprint. This does not use natural equality, but the
+        result use a set() to remove duplicates, so defining __eq__
+        on your objects would have not effect.
+
+        By default the fingerprint is the object itself,
+        which ensure the functions works as-is with iterable of primitives
+        such as int, str or tuple.
+
+        :Example:
+
+            >>> list(skip_duplicates([1, 2, 3, 4, 4, 2, 1, 3 , 4]))
+            [1, 2, 3, 4]
+
+        The return value of `key` MUST be hashable, which means for
+        non hashable objects such as dict, set or list, you need to specify
+        a a function that returns a hashable fingerprint.
+
+        :Example:
+
+            >>> list(skip_duplicates(([], [], (), [1, 2], (1, 2)), lambda x: tuple(x)))
+            [[], [1, 2]]
+            >>> list(skip_duplicates(([], [], (), [1, 2], (1, 2)), lambda x: (type(x), tuple(x))))
+            [[], (), [1, 2], (1, 2)]
+
+        For more complex types, such as custom classes, the default behavior
+        is to remove nothing. You MUST provide a `key` function is you wish
+        to filter those.
+
+        :Example:
+
+            >>> class Test(object):
+                def __init__(self, foo='bar'):
+                    self.foo = foo
+                def __repr__(self):
+                    return "Test('%s')" % self.foo
+            ...
+            >>> list(skip_duplicates([Test(), Test(), Test('other')]))
+            [Test('bar'), Test('bar'), Test('other')]
+            >>> list(skip_duplicates([Test(), Test(), Test('other')], lambda x: x.foo))
+            [Test('bar'), Test('other')]
+
+        See also :
+            - strip_duplicates : a simpler, slower function that returns a list
+                                 of elements with no duplicates. It accepts
+                                 non hashable elements and honors __eq__.
+          - remove_duplicates : remove duplicates from a list in place.
+                                Most ressource efficient merthod.
+    """
+    fingerprints = set()
+
+    try:
+        for x in iterable:
+            fingerprint = key(x)
+            if fingerprint not in fingerprints:
+                yield x
+                fingerprints.add(fingerprint)
+    except TypeError as e:
+        try:
+            hash(fingerprint)
+        except TypeError:
+            raise TypeError(
+                "Calculating the key on one element resulted in a non hashable "
+                "object of type '%s'. Change the 'key' parameter to a function "
+                "that always, returns a hashable object. Hint : primitives "
+                "like int, str or tuple, are hashable, dict, set and list are "
+                "not. \nThe object that triggered the error was:\n%s" % (
+                type(fingerprint), x)
+            )
+        else:
+            raise
+
+
+
+def strip_duplicates(iterable, equals=lambda x, y: x == y):
+    """
+        Return a list of elements from iterable, without duplicates.
+
+        This uses equality to find duplicates, and will honor __eq__, but
+        will not work on infinite iterables.
+
+        :Examples:
+
+            >>> strip_duplicates('fdjqkslfjdmkfdsqjkfmjqsdmlkfjqslkmfjsdklfl')
+            ['f', 'd', 'j', 'q', 'k', 's', 'l', 'm']
+            >>> strip_duplicates(([], [], (), [1, 2], (1, 2)))
+            [[], (), [1, 2], (1, 2)]
+            >>> strip_duplicates(([], [], (), [1, 2], (1, 2)), lambda x, y: tuple(x) == tuple(y))
+            [[], [1, 2]]
+            >>> class Test(object):
+                def __init__(self, foo='bar'):
+                    self.foo = foo
+                def __repr__(self):
+                    return "Test('%s')" % self.foo
+                def __eq__(self, other):
+                    return self.foo == other.foo
+            >>> strip_duplicates([Test(), Test(), Test('other')])
+            [Test('bar'), Test('other')]
+
+        See also :
+          - skip_duplicates : returns a generator yielding elements without
+                              duplicates. Faster, works on infinite iterables,
+                              but uses hashes instead of equality.
+          - remove_duplicates : remove duplicates from a list in place.
+                                Most ressource efficient merthod.
+    """
+
+    iterable = iter(iterable)
+
+    res = []
+    while True:
+
+        try:
+            elem = next(iterable)
+        except StopIteration:
+            break
+
+        res.append(elem)
+
+        iterable = iter([x for x in iterable if not equals(elem, x)])
+
+    return res
+
+
+def remove_duplicates(lst, equals=lambda x, y: x == y):
+    """
+        Removes duplicates from a list, in place.
+
+        Works only with lists and modifies the list, but it's pretty ressource
+        saving compared to other methods.
+
+        See also :
+          - skip_duplicates : returns a generator yielding elements without
+                              duplicates. Faster, works on infinite iterables,
+                              but uses hashes instead of equality.
+          - strip_duplicates : a simpler, slower function that returns a list
+                                 of elements with no duplicates. It accepts
+                                 non hashable elements and honors __eq__.
+    """
+
+    if not isinstance(lst, list):
+        raise TypeError('This function works only with lists.')
+
+    i1 = 0
+    l = (len(lst) - 1)
+
+    while i1 < l:
+
+        elem = lst[i1]
+
+        i2 = i1 + 1
+        while i2 <= l:
+            if equals(elem, lst[i2]):
+                del lst[i2]
+                l -= 1
+            i2 += 1
+
+        i1 += 1
+
+    return lst
+
 
 
 KEY, PREV, NEXT = range(3)

@@ -230,3 +230,48 @@ def multibreak():
         yield MultiStopIteration().throw
     except MultiStopIteration:
         pass
+
+
+def accept_callbacks(func):
+    """
+       A decorator to allow any function to be able to accept callbacks.
+
+       :Example:
+
+            # make your function accept callbacks
+            @accept_callbacks
+            def add(a, b):
+                return a + b
+
+            # write a callback that accept 'result' as the first parameter
+            # and the function paramters as other parameters
+            def my_callback(result, a, b):
+                print("Function called with a=%s et b=%s !" % (a, b))
+                print("It returned '%s'" % result)
+
+            # add the callback to the callback list
+            add.callbacks.append(my_callback)
+
+            # enjoy
+            >>> add(1, 2)
+            Function called with a=1 et b=2 !
+            It returned '3'
+            3
+
+    """
+
+    callbacks = []
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+
+        result = func(*args, **kwargs)
+
+        for callback in callbacks:
+            callback(result, *args, **kwargs)
+
+        return result
+
+    wrapper.callbacks = callbacks
+
+    return wrapper
