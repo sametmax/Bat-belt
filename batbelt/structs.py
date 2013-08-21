@@ -105,6 +105,27 @@ def get(data, *keys, **kwargs):
     return value
 
 
+def iget(data, value, default=None):
+    """
+        Same as indexing, but works with any iterable,
+        and accept a default value.
+
+        :Example:
+
+        >>> iget(xrange(10), 0)
+        0
+        >>> iget(xrange(10), 5)
+        5
+        >>> iget(xrange(10), 10000, default='wololo')
+        u'wololo'
+    """
+
+    for x in islice(data, value, None):
+        return x
+    return default
+
+
+
 def rename(dct, old_name, new_name):
     """
         Rename a key in a dictionary. No effect if the key does not exists.
@@ -121,9 +142,9 @@ def rename(dct, old_name, new_name):
     return dct
 
 
-def unpack(dct, *args, **kwargs):
+def unpack(indexable, *args, **kwargs):
     """
-        Return an generator with the values for the given keys or
+        Return an generator with the values for the given keys/indices or
         a default value.
 
         :Example:
@@ -136,13 +157,14 @@ def unpack(dct, *args, **kwargs):
         4
         >>> c
         1
-
+        >>> list(unpack(range(5, 10), 2, 4))
+        [7, 9]
     """
 
     default = kwargs.get('default', None)
 
     for key in args:
-        yield dct.get(key, default)
+        yield get(indexable, key, default=default)
 
 
 
@@ -172,14 +194,9 @@ def subdict(dct, include=(), exclude=()):
     return dict((k, v) for k, v in dct.iteritems() if k not in exclude)
 
 
-def first(iterable, default=None):
-    """
-        Return the first item of any iterable. If the iterable is empty,
-        return the default value.
-    """
-    for x in iterable:
-        return x
-    return default
+
+# aliased for compat, but should probably be removed
+first = lambda data, default=None: iget(data, 0, default)
 
 
 def first_true(iterable, key=lambda x: x, default=None):
