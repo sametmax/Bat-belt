@@ -3,7 +3,7 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 
-from collections import MutableSet, deque
+from collections import MutableSet, deque, OrderedDict, defaultdict
 
 from itertools import islice, chain
 
@@ -450,4 +450,86 @@ class sset(MutableSet):
     def __del__(self):
         self.clear()   # remove circular references
 
+
+
+class Flattener(object):
+    """
+        Create a flattener that you can call on a deeply nested data
+        structures to iterate over the items as it if it were a flat iterable.
+
+        The flattener returns a generator that lazily yield the items and
+        deals with up to hundred of levels of nesting (~800 on my machine,
+        and you can control it with sys.setrecursionlimit).
+
+        A default flattener named 'flatten' is available by default.
+
+        :Example:
+
+            a = []
+            for i in xrange(10):
+                a = [a, i]
+            print(a)
+
+            [[[[[[[[[[[], 0], 1], 2], 3], 4], 5], 6], 7], 8], 9]
+
+            print(list(flatten(a)))
+
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+        By default, it flattens all the types listed in
+        Flattener.DEFAULT_FLATTEN_TYPES but you can pass you list via
+        flatten_types while calling a Flatener instance.
+
+        For ambigious types like dict, you can pass iterable_getters, a
+        mapping type / callback letting you define how to extract items from
+        each type.
+
+        :Example:
+
+            a = []
+            for i in xrange(2):
+                a = [a, i] + [{'a': 1., 'b': {'c': 3.}}]
+            print(a)
+
+            [[[], 0, {'a': 1.0, 'b': {'c': 3.0}}], 1, {'a': 1.0, 'b': {'c': 3.0}}]
+
+            getters = {dict: lambda x: x.items()}
+            print(list(flatten(a, iterable_getters=getters)))
+
+            [0, 'a', 1.0, 'b', 'c', 3.0, 1, 'a', 1.0, 'b', 'c', 3.0]
+
+    """
+
+    DEFAULT_FLATTEN_TYPES = (
+        list,
+        tuple,
+        set,
+        (x for x in ()).__class__,
+        xrange,
+        deque,
+        OrderedDict,
+        dict,
+        MutableSet,
+        defaultdict,
+        # Sequence # warning, a string is a subclass of Sequence
+    )
+
+    def __call__(self, iterable,
+                  flatten_types=DEFAULT_FLATTEN_TYPES,
+                  iterable_getters={}):
+
+        it = iter(iterable)
+        for e in it:
+            if isinstance(e, flatten_types):
+                if e.__class__ in iterable_getters:
+                    e = iterable_getters[e.__class__](e)
+                for f in self(e, flatten_types, iterable_getters):
+                    yield f
+            else:
+                yield e
+
+
+
+
+flatten = Flattener()
 
