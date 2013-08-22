@@ -52,6 +52,8 @@ u"""
 """
 
 import re
+import os
+import codecs
 import json
 import unicodedata
 
@@ -347,6 +349,62 @@ def render(tpl, context, target):
     target.write(res)
 
     target.close()
+
+
+def write(path, *args, **kwargs):
+    """
+        Try to write to the file at `path` the values passed as `args` as lines.
+
+        It will attempt decoding / encoding and casting automatically each value
+        to a string.
+
+        This is an utility function : its slow and doesn't consider edge cases,
+        but allow to do just what you want most of the time in one line.
+
+        :Example:
+
+            s = '/tmp/test'
+            write(s, 'test', 'é', 1, ['fdjskl'])
+            print open(s).read()
+            test
+            é
+            1
+            ['fdjskl']
+
+        The return value is the file descriptor, which will be closed if you
+        passed a path, and open if you passed a fd (in which case you should
+        close it yourself.).
+
+        You can optionally pass :
+
+        mode : among 'a', 'w', which default to 'w'. Binary mode is forced.
+        encoding : which default to utf8 and will condition decoding AND encoding
+        errors : what to do when en encoding error occurs : 'replace' by default,
+                which replace faulty caracters with '?'
+
+        You can pass string or unicode as *args, but if you pass strings,
+        make sure you pass them with the same encoding you wish to write to
+        the file.
+    """
+
+    mode = kwargs.get('mode', 'w')
+    encoding = kwargs.get('encoding', 'utf8')
+    errors = kwargs.get('encoding', 'replace')
+
+    with codecs.open(path, mode=mode, encoding=encoding, errors=errors) as f:
+
+        for line in args:
+
+            if isinstance(line, str):
+                line = line.decode(encoding, errors)
+
+            if not isinstance(line, unicode):
+                line = repr(line)
+
+            f.write(line + os.linesep)
+
+        return f
+
 
 
 if __name__ == "__main__":
