@@ -493,11 +493,11 @@ class Flattener(object):
 
             [[[], 0, {'a': 1.0, 'b': {'c': 3.0}}], 1, {'a': 1.0, 'b': {'c': 3.0}}]
 
-            getters = {dict: lambda x: x.items()}
-            print(list(flatten(a, iterable_getters=getters)))
+            dico_flatten = Flattener(iterable_getters={dict: lambda x: x.items()})
 
             [0, 'a', 1.0, 'b', 'c', 3.0, 1, 'a', 1.0, 'b', 'c', 3.0]
 
+            print(list(dico_flatten(a)))
     """
 
     DEFAULT_FLATTEN_TYPES = (
@@ -514,20 +514,21 @@ class Flattener(object):
         # Sequence # warning, a string is a subclass of Sequence
     )
 
-    def __call__(self, iterable,
-                  flatten_types=DEFAULT_FLATTEN_TYPES,
-                  iterable_getters={}):
 
-        it = iter(iterable)
-        for e in it:
-            if isinstance(e, flatten_types):
-                if e.__class__ in iterable_getters:
-                    e = iterable_getters[e.__class__](e)
-                for f in self(e, flatten_types, iterable_getters):
+    def __init__(self, flatten_types=None, iterable_getters={}):
+        self.flatten_types = flatten_types or self.DEFAULT_FLATTEN_TYPES
+        self.iterable_getters = iterable_getters
+
+
+    def __call__(self, iterable):
+        for e in iterable:
+            if isinstance(e, self.flatten_types):
+                if e.__class__ in self.iterable_getters:
+                    e = self.iterable_getters[e.__class__](e)
+                for f in self(e):
                     yield f
             else:
                 yield e
-
 
 
 
