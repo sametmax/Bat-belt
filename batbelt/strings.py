@@ -371,10 +371,6 @@ def write(path, *args, **kwargs):
             1
             ['fdjskl']
 
-        The return value is the file descriptor, which will be closed if you
-        passed a path, and open if you passed a fd (in which case you should
-        close it yourself.).
-
         You can optionally pass :
 
         mode : among 'a', 'w', which default to 'w'. Binary mode is forced.
@@ -402,8 +398,6 @@ def write(path, *args, **kwargs):
                 line = repr(line)
 
             f.write(line + os.linesep)
-
-        return f
 
 
 
