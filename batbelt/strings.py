@@ -2,9 +2,9 @@
 #!/usr/bin/env python
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-u"""
+r"""
 
-    Various tools to manipulate strints. Features tools to normalize and
+    Various tools to manipulate strings. Features tools to normalize and
     slugify strings. Also some ways to escape HTML and a JSON serializer
     that deals with datetime objects.
 
@@ -18,9 +18,9 @@ u"""
     Example:
 
         >>> from strings import slugify
-        >>> slugify(u"C'est Noël !")
+        >>> slugify(u"C'est No\xebl !")
         u'cest-noel'
-        >>> slugify(u"C'est Noël !", separator="_")
+        >>> slugify(u"C'est No\xebl !", separator="_")
         u'cest_noel'
 
     It will handle all unicode equivalences if (and only if) the optional
@@ -28,7 +28,7 @@ u"""
 
     Example:
 
-        >>> slugify(u"北亰")
+        >>> slugify(u"\u5317\u4eb0")
         u'bei-jing'
 
     More about it:
@@ -38,16 +38,16 @@ u"""
     If you do have unidecode installed, but wish not to use it, use the
     unicodedata_slugify fonction:
 
-        >>> slugify(u"Héllø Wörld") # slugify() uses unidecode if it can
+        >>> slugify(u"H\xe9ll\xf8 W\xc3\xb6rld") # slugify() uses unidecode if it can
         u'hello-world'
-        >>> unicodedata_slugify(u"Héllø Wörld") # this will more limited
+        >>> unicodedata_slugify(u"H\xe9ll\xf8 W\xc3\xb6rld") # this will more limited
         u'hell-world'
 
     In case you wish to keep the non ASCII characters "as-is", use
     unicode_slugify():
 
-    >>> print unicode_slugify(u"C'est Noël !")
-    cest-noël
+    >>> print unicode_slugify(u"C'est No\xebl !")
+    cest-no\xebl
 
 """
 
@@ -65,14 +65,14 @@ from utils import CLASSIC_DATETIME_FORMAT, CLASSIC_DATETIME_PATTERN
 
 
 def unicode_slugify(string, separator=r'-'):
-    ur"""
+    r"""
     Slugify a unicode string using to normalize the string, but without trying
     to convert or strip non ASCII characters.
 
     Example:
 
-        >>> print unicode_slugify(u"Héllø Wörld")
-        héllø-wörld
+        >>> print unicode_slugify(u"H\xe9ll\xf8 W\xc3\xb6rld")
+        h\xe9ll\xf8-w\xc3\xb6rld
         >>> unidecode_slugify(u"Bonjour, tout l'monde !", separator="_")
         u'bonjour_tout_lmonde'
         >>> unidecode_slugify(u"\tStuff with -- dashes and...   spaces   \n")
@@ -86,12 +86,12 @@ def unicode_slugify(string, separator=r'-'):
 
 
 def unicodedata_slugify(string, separator=r'-'):
-    ur"""
+    r"""
     Slugify a unicode string using unicodedata to normalize the string.
 
     Example:
 
-        >>> unicodedata_slugify(u"Héllø Wörld")
+        >>> unicodedata_slugify(u"H\xe9ll\xf8 W\xc3\xb6rld")
         u'hell-world'
         >>> unidecode_slugify(u"Bonjour, tout l'monde !", separator="_")
         u'bonjour_tout_lmonde'
@@ -105,12 +105,12 @@ def unicodedata_slugify(string, separator=r'-'):
 
 
 def unidecode_slugify(string, separator=r'-'):
-    ur"""
+    r"""
     Slugify a unicode string using unidecode to normalize the string.
 
     Example:
 
-        >>> unidecode_slugify(u"Héllø Wörld")
+        >>> unidecode_slugify(u"H\xe9ll\xf8 W\xc3\xb6rld")
         u'hello-world'
         >>> unidecode_slugify(u"Bonjour, tout l'monde !", separator="_")
         u'bonjour_tout_lmonde'
@@ -124,10 +124,34 @@ def unidecode_slugify(string, separator=r'-'):
 
 
 def unicodedata_normalize(string):
+    r"""
+        Returns a new string withou non ASCII characters, trying to replace
+        them with their ASCII closest counter parts when possible.
+
+        :Example:
+
+            >>> normalize(u"H\xe9ll\xf8 W\xc3\xb6rld")
+            'Hell World'
+
+
+        This version use unicodedata and provide limited yet
+        useful results.
+    """
     return unicodedata.normalize('NFKD', string).encode('ascii', 'ignore')
 
 
 def unidecode_normalize(string):
+    r"""
+        Returns a new string withou non ASCII characters, trying to replace
+        them with their ASCII closest counter parts when possible.
+
+        :Example:
+
+            >>> normalize(u"H\xe9ll\xf8 W\xc3\xb6rld")
+            'Hello World'
+
+        This version use unidecode and provide enhanced results.
+    """
     return unidecode.unidecode(string)
 
 
@@ -364,10 +388,10 @@ def write(path, *args, **kwargs):
         :Example:
 
             s = '/tmp/test'
-            write(s, 'test', 'é', 1, ['fdjskl'])
+            write(s, 'test', '\xe9', 1, ['fdjskl'])
             print open(s).read()
             test
-            é
+            \xe9
             1
             ['fdjskl']
 

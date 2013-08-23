@@ -8,7 +8,7 @@ __version__ = "0.5.1"
 from strings import (slugify, normalize, escape_html,
                      unescape_html, json_dumps, json_loads)
 from structs import (chunks, get, dmerge, sset, dswap, window,
-                     subdict, first, first_true)
+                     subdict, iget, flatten, skip_duplicates)
 from objects import attr, import_from_path, Null
 from utils import to_timestamp
 from hack import decorator_with_args
