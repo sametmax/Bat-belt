@@ -12,7 +12,7 @@ __all__ = ['chunks', 'dmerge', 'get', 'window', 'dswap', 'subdict', 'first',
            'first_true', 'sset']
 
 
-def chunks(seq, chunksize, process=iter):
+def chunks(seq, chunksize, process=tuple):
     """
         Yields items from an iterator in iterable chunks.
     """
