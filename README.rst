@@ -263,6 +263,6 @@ You don't always need the guaranty of a big lib, you just need a little worker t
     # stop the worker
     process.stop()
 
-Le worker use subprocess by default, but if you prefer threads: `@worker(method="tread")`.
+The worker use multiprocessing by default, but if you prefer threads: `@worker(method="tread")`.
 
 If you look for it in the source code, you'll see goodies such as Singletong, Null Pattern implementation and other things you don't use that often.
