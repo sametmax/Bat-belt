@@ -9,7 +9,7 @@
 import threading
 import multiprocessing
 from functools import wraps
-from Queue import Queue, Empty
+from Queue import Empty
 
 __all__ = ['process', 'thread']
 
@@ -134,50 +134,53 @@ def worker(block=True, timeout=0.1, method='process'):
     def decorator(func):
 
         if method == 'thread':
-            Q = Queue
+            Queue = threading.Queue
             Manager = threading.Thread
+            Error = threading.TimeoutError
         else:
-            Q = multiprocessing.Queue
+            Queue = multiprocessing.Queue
             Manager = multiprocessing.Process
+            Error = multiprocessing.TimeoutError
 
-        in_queue = Q()
-        out_queue = Q()
+            in_queue = Queue()
+            out_queue = Queue()
 
-        def main_loop():
+            def main_loop():
 
-            while True:
-                try:
+                while True:
+                    try:
 
-                    res = in_queue.get(block, timeout)
+                        res = in_queue.get(block, timeout)
 
-                    if isinstance(res, StopWorker):
+                        if isinstance(res, StopWorker):
+                            break
+
+                        out_queue.put(func(res))
+
+                    except (Error, Empty):
+                        pass
+                    except (StopWorker, KeyboardInterrupt):
                         break
+                    except Exception as e:
+                        out_queue.put(e)
 
-                    out_queue.put(func(res))
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
 
-                except Empty:
-                    pass
-                except KeyboardInterrupt:
-                    break
-                except Exception as e:
-                    out_queue.put(e)
+            def get(block=block, timeout=timeout):
+                res = out_queue.get(block, timeout)
+                if isinstance(res, Exception):
+                    raise res
+                return res
 
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
+            wrapper.manager = Manager(target=main_loop)
+            wrapper.manager.get = get
+            wrapper.manager.stop = lambda: in_queue.put(StopWorker(), block, timeout)
+            wrapper.manager.put = lambda x: in_queue.put(x, block, timeout)
+            wrapper.TimeoutError = Error
+            wrapper.start = lambda: wrapper.manager.start() or wrapper.manager
 
-        def get(block=block, timeout=timeout):
-            res = out_queue.get(block, timeout)
-            if isinstance(res, Exception):
-                raise res
-            return res
-
-        wrapper.manager = Manager(target=main_loop)
-        wrapper.manager.get = get
-        wrapper.manager.stop = lambda: in_queue.put(StopWorker(), block, timeout)
-        wrapper.manager.put = lambda x: in_queue.put(x, block, timeout)
-        wrapper.start = lambda: wrapper.manager.start() or wrapper.manager
-
-        return wrapper
+            return wrapper
 
     return decorator
